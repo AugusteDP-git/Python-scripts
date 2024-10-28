@@ -11,49 +11,29 @@ from sklearn.preprocessing import StandardScaler
 
 
 
-# Set `EXTENDED_EVALUATION` to `True` in order to visualize your predictions.
 EXTENDED_EVALUATION = True
-EVALUATION_GRID_POINTS = 300  # Number of grid points used in extended evaluation
+EVALUATION_GRID_POINTS = 300 
 
-# Cost function constants
 COST_W_UNDERPREDICT = 50.0
 COST_W_NORMAL = 1.0
 
 class Model(object):
-    """
-    Model for this task.
-    You need to implement the train_model and generate_predictions methods
-    without changing their signatures, but are allowed to create additional methods.
-    """
+ 
 
     def __init__(self):
-        """
-        Initialize your model here.
-        We already provide a random number generator for reproducibility.
-        """
         self.rng = np.random.default_rng(seed=0)
         self.model = None
         self.kmeans = None
         self.kernels = [
-            #ConstantKernel(1.0, (1e-3, 1e3)) * RBF(length_scale = 1.0, length_scale_bounds = (1e-5, 1e5)),
             ConstantKernel(1.0, (1e-3, 1e3)) * Matern(length_scale = 1.0, length_scale_bounds = (1e-5, 1e5)) + WhiteKernel(1, (1e-5, 1e5)),
-            #ConstantKernel(1.0, (1e-3, 1e3)) * ExpSineSquared(length_scale= 1.0, length_scale_bounds = (1e-3, 1e3)),
-            #ConstantKernel(1.0, (1e-3, 1e3)) * RationalQuadratic(length_scale = 1.0, length_scale_bounds = (1e-3, 1e3)),
-            #ConstantKernel(1.0, (1e-3, 1e3)) * RBF(length_scale = 1.0, length_scale_bounds = (1e-5, 1e5)) + WhiteKernel(1, (1e-5, 1e5)),
+            ConstantKernel(1.0, (1e-3, 1e3)) * ExpSineSquared(length_scale= 1.0, length_scale_bounds = (1e-3, 1e3)),
+            ConstantKernel(1.0, (1e-3, 1e3)) * RationalQuadratic(length_scale = 1.0, length_scale_bounds = (1e-3, 1e3)),
+            ConstantKernel(1.0, (1e-3, 1e3)) * RBF(length_scale = 1.0, length_scale_bounds = (1e-5, 1e5)) + WhiteKernel(1, (1e-5, 1e5)),
         ]
     
 
     def generate_predictions(self, test_coordinates: np.ndarray, test_area_flags: np.ndarray) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Predict the pollution concentration for a given set of city_areas.
-        :param test_coordinates: city_areas as a 2d NumPy float array of shape (NUM_SAMPLES, 2)
-        :param test_area_flags: city_area info for every sample in a form of a bool array (NUM_SAMPLES,)
-        :return:
-            Tuple of three 1d NumPy float arrays, each of shape (NUM_SAMPLES,),
-            containing your predictions, the GP posterior mean,< and the GP posterior stddev (in that order)
-        """
 
-        # TODO: Use your GP to estimate the posterior mean and stddev for each city_area here
         gp_mean = np.zeros(test_coordinates.shape[0], dtype=float)
         gp_std = np.zeros(test_coordinates.shape[0], dtype=float)
 
@@ -68,7 +48,6 @@ class Model(object):
           gp_mean[i] = y_mean
           gp_std[i] = y_std
 
-        # TODO: Use the GP posterior to form your predictions here
         predictions = np.zeros(test_coordinates.shape[0], dtype=float)
 
         for k in range(len(gp_mean)):
@@ -111,12 +90,7 @@ class Model(object):
 
 
     def train_model(self, train_targets: np.ndarray, train_coordinates: np.ndarray, train_area_flags: np.ndarray):
-        """
-        Fit your model on the given training data.
-        :param train_coordinates: Training features as a 2d NumPy float array of shape (NUM_SAMPLES, 2)
-        :param train_targets: Training pollution concentrations as a 1d NumPy float array of shape (NUM_SAMPLES,)
-        :param train_area_flags: Binary variable denoting whether the 2D training point is in the residential area (1) or not (0)
-        """
+        
         best_log_marginal_likelihood = -np.inf
 
 
@@ -132,48 +106,25 @@ class Model(object):
         pass
 
 
-# You don't have to change this function
 def calculate_cost(ground_truth: np.ndarray, predictions: np.ndarray, area_flags: np.ndarray) -> float:
-    """
-    Calculates the cost of a set of predictions.
-
-    :param ground_truth: Ground truth pollution levels as a 1d NumPy float array
-    :param predictions: Predicted pollution levels as a 1d NumPy float array
-    :param area_flags: city_area info for every sample in a form of a bool array (NUM_SAMPLES,)
-    :return: Total cost of all predictions as a single float
-    """
+  
     assert ground_truth.ndim == 1 and predictions.ndim == 1 and ground_truth.shape == predictions.shape
 
-    # Unweighted cost
     cost = (ground_truth - predictions) ** 2
     weights = np.ones_like(cost) * COST_W_NORMAL
 
-    # Case i): underprediction
     mask = (predictions < ground_truth) & [bool(area_flag) for area_flag in area_flags]
     weights[mask] = COST_W_UNDERPREDICT
 
-    # Weigh the cost and return the average
     return np.mean(cost * weights)
 
 
-# You don't have to change this function
 def check_within_circle(coordinate, circle_parameters):
-    """
-    Checks if a coordinate is inside a circle.
-    :param coordinate: 2D coordinate
-    :param circle_parameters: 3D coordinate of the circle center and its radius
-    :return: True if the coordinate is inside the circle, False otherwise
-    """
+  
     return (coordinate[0] - circle_parameters[0])**2 + (coordinate[1] - circle_parameters[1])**2 < circle_parameters[2]**2
 
-# You don't have to change this function
 def identify_city_area_flags(grid_coordinates):
-    """
-    Determines the city_area index for each coordinate in the visualization grid.
-    :param grid_coordinates: 2D coordinates of the visualization grid
-    :return: 1D array of city_area indexes
-    """
-    # Circles coordinates
+   
     circles = np.array([[0.5488135, 0.71518937, 0.17167342],
                     [0.79915856, 0.46147936, 0.1567626 ],
                     [0.26455561, 0.77423369, 0.10298338],
@@ -197,16 +148,10 @@ def identify_city_area_flags(grid_coordinates):
 
     return area_flags
 
-# You don't have to change this function
 def execute_extended_evaluation(model: Model, output_dir: str = '/results'):
-    """
-    Visualizes the predictions of a fitted model.
-    :param model: Fitted model to be visualized
-    :param output_dir: Directory in which the visualizations will be stored
-    """
+    
     print('Performing extended evaluation')
 
-    # Visualize on a uniform grid over the entire coordinate system
     grid_lat, grid_lon = np.meshgrid(
         np.linspace(0, EVALUATION_GRID_POINTS - 1, num=EVALUATION_GRID_POINTS) / EVALUATION_GRID_POINTS,
         np.linspace(0, EVALUATION_GRID_POINTS - 1, num=EVALUATION_GRID_POINTS) / EVALUATION_GRID_POINTS,
@@ -214,20 +159,17 @@ def execute_extended_evaluation(model: Model, output_dir: str = '/results'):
     visualization_grid = np.stack((grid_lon.flatten(), grid_lat.flatten()), axis=1)
     grid_area_flags = identify_city_area_flags(visualization_grid)
 
-    # Obtain predictions, means, and stddevs over the entire map
     predictions, gp_mean, gp_stddev = model.generate_predictions(visualization_grid, grid_area_flags)
     predictions = np.reshape(predictions, (EVALUATION_GRID_POINTS, EVALUATION_GRID_POINTS))
     gp_mean = np.reshape(gp_mean, (EVALUATION_GRID_POINTS, EVALUATION_GRID_POINTS))
 
     vmin, vmax = 0.0, 65.0
 
-    # Plot the actual predictions
     fig, ax = plt.subplots()
     ax.set_title('Extended visualization of task 1')
     im = ax.imshow(predictions, vmin=vmin, vmax=vmax)
     cbar = fig.colorbar(im, ax=ax)
 
-    # Save figure to pdf
     figure_path = os.path.join(output_dir, 'extended_evaluation.pdf')
     fig.savefig(figure_path)
     print(f'Saved extended evaluation to {figure_path}')
@@ -242,7 +184,6 @@ def extract_area_information(train_x: np.ndarray, test_x: np.ndarray) -> typing.
     test_area_flags = np.zeros((test_x.shape[0],), dtype=bool)
 
 
-    #TODO: Extract the city_area information from the training and test features
     train_coordinates = train_x[:, :2]
     train_area_flags = train_x[:, 2].astype(bool)
     test_coordinates = test_x[:, :2]
@@ -255,25 +196,21 @@ def extract_area_information(train_x: np.ndarray, test_x: np.ndarray) -> typing.
     return train_coordinates, train_area_flags, test_coordinates, test_area_flags
 
 
-# you don't have to change this function
 def main():
-    # Load the training dateset and test features
     train_x = np.loadtxt('train_x.csv', delimiter=',', skiprows=1)
     train_y = np.loadtxt('train_y.csv', delimiter=',', skiprows=1)
     test_x = np.loadtxt('test_x.csv', delimiter=',', skiprows=1)
-    # Extract the city_area information
+
     scaler = StandardScaler()
     train_x = scaler.fit_transform(train_x)
     test_x = scaler.transform(test_x)
     train_coordinates, train_area_flags, test_coordinates, test_area_flags = extract_area_information(train_x, test_x)
 
-    # Fit the model
     model = Model()
 
     print('Training model')
     model.train_model(train_y, train_coordinates, train_area_flags)
 
-    # Predict on the test features
     print('Predicting on test features')
     predictions = model.generate_predictions(test_coordinates, test_area_flags)
     print(predictions)
