@@ -1,2 +1,1 @@
-# Masters-code
-Code from my master's degree at ETH
+Code from my studies at ETH and EPFL
