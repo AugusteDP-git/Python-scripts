@@ -223,8 +223,7 @@ class Agent:
         self.buffer.store(obs, next_obs, action, reward, terminated)
 
 
-# This main function is provided here to enable some basic testing. 
-# ANY changes here WON'T take any effect while grading.
+
 if __name__ == '__main__':
 
     WARMUP_EPISODES = 10  # initial episodes of uniform exploration
