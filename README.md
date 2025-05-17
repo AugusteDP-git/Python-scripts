@@ -1,1 +1,1 @@
-Code from my studies at ETH and EPFL
+Python scripts from various academic and personal projects
