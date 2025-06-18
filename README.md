@@ -1,1 +1,1 @@
-Python scripts from various academic and personal projects
+Scripts from various academic and personal projects
